@@ -3,6 +3,7 @@ from tkinter import messagebox
 
 # Password Generator Project
 from random import *
+import json
 
 def password_generator():
     letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
@@ -20,21 +21,53 @@ def password_generator():
     entry_pass.delete(0, END)
     entry_pass.insert(0, password)
 
+# Find password
+def find_password():
+    website = entry_web.get()
+    try:
+        with open("data.json") as data_file:
+            data = json.load(data_file)
+    except FileNotFoundError:
+        messagebox.showinfo(title="Error", message="No data file found")
+    else:
+        if website in data:
+            email = data[website]["email"]
+            password = data[website]["password"]
+            messagebox.showinfo(title=website, message=f"Email:{email}\nPassword:{password}")
+        else:
+            messagebox.showinfo(title="Error", message=f"No details for {website} exist.")
 # Save Password
 def save():
     website = entry_web.get()
     email = entry_email.get()
     password = entry_pass.get()
+    new_data = {
+        website: {
+            "email": email,
+            "password": password
+        }
+    }
     if len(website) == 0 or len(password) == 0:
         messagebox.showinfo(title="Invalid input", message="Please fill in all fields.")
     else:
-        is_ok = messagebox.askokcancel(title=website, message=f"These are the details entered:\nEmail: {email}\nPassword: {password}\nIs it okay to save?")
-        if is_ok:
-            with open("data.txt", "a") as data_file:
-                data_file.write(f"{website} | {email} | {password}\n")
-                entry_web.delete(0, END)
-                entry_pass.delete(0, END)
-                entry_email.delete(0, END)
+        try:
+            with open("data.json", "r") as data_file:
+                # Reading old data
+                data = json.load(data_file)
+        except FileNotFoundError:
+            data = {}
+
+        # Updating old data
+        data.update(new_data)
+
+        with open("data.json", "w") as data_file:
+            # Saving updated data
+            json.dump(data, data_file, indent=4)
+
+        entry_web.delete(0, END)
+        entry_pass.delete(0, END)
+        entry_email.delete(0, END)
+
 
 # Create the main window
 window = Tk()
@@ -72,6 +105,8 @@ gen_pass = Button(window, text="Generate Password", command=password_generator, 
 gen_pass.grid(row=4, column=1, padx=10, pady=(10, 0))
 add_pass = Button(window, text="Add", command=save, bg="#32CD32", fg="white", font=("Arial", 12, "bold"))  # Set button background and text color
 add_pass.grid(row=5, column=1, pady=10)
+add_search = Button(window, text="Search", command=find_password, bg="#1E90FF", fg="white", font=("Arial", 8, "bold"))
+add_search.grid(row=1, column=2)
 
 # Start the Tkinter event loop
 window.mainloop()
